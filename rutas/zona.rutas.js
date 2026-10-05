@@ -1,21 +1,22 @@
 import { Router } from 'express';
-import { Zona } from '../clases/zona.js'; 
+import { zona } from '../clases/zona.js'; 
+import { soloAdmin } from '../middlewares/auth.middleware.js';
 
 const enrutador = Router();
 
 enrutador.get('/zonas', async (req, res) => {
   try {
-    const zonas = await Zona.findAll();
+    const zonas = await zona.findAll();
     res.json(zonas);
   } catch (error) {
     res.status(500).json({ mensaje: 'Error al obtener las zonas', error });
   }
 });
 
-enrutador.get('/zonas/:id', async (req, res) => {
+enrutador.get('/zonas/:id', soloAdmin,async (req, res) => {
   try {
     // findByPk busca por la Primary Key (tu codZona)
-    const zona = await Zona.findByPk(req.params.id);
+    const zona = await zona.findByPk(req.params.id);
     if (!zona) {
       return res.status(404).json({ mensaje: 'Zona no encontrada' });
     }
@@ -26,9 +27,9 @@ enrutador.get('/zonas/:id', async (req, res) => {
 });
 
 
-enrutador.post('/zonas', async (req, res) => {
+enrutador.post('/zonas', soloAdmin,async (req, res) => {
   try {
-    const nuevaZona = await Zona.create(req.body);
+    const nuevaZona = await zona.create(req.body);
     res.status(201).json(nuevaZona);
   } catch (error) {
     res.status(400).json({ mensaje: 'Error al crear la zona', error });
@@ -36,9 +37,9 @@ enrutador.post('/zonas', async (req, res) => {
 });
 
 
-enrutador.put('/zonas/:id', async (req, res) => {
+enrutador.put('/zonas/:id', soloAdmin,async (req, res) => {
   try {
-    const zonaActualizada = await Zona.update(req.body, {
+    const zonaActualizada = await zona.update(req.body, {
       where: { codZona: req.params.id } 
     });
     
@@ -52,9 +53,9 @@ enrutador.put('/zonas/:id', async (req, res) => {
 });
 
 
-enrutador.delete('/zonas/:id', async (req, res) => {
+enrutador.delete('/zonas/:id', soloAdmin,async (req, res) => {
   try {
-    const borrados = await Zona.destroy({
+    const borrados = await zona.destroy({
       where: { codZona: req.params.id }
     });
     

@@ -15,6 +15,10 @@ export const usuarios = sequelize.define('usuarios', {
     type: DataTypes.STRING,
     allowNull: false
   },
+   password: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
   rol: {
     // ENUM significa que solo puede aceptar uno de estos valores exactos
     type: DataTypes.ENUM('ADMIN', 'DETECTIVE', 'FORENSE', 'JUEZ_FISCAL'),

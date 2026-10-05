@@ -1,0 +1,18 @@
+### Intento de crear zona (Acceso denegado)
+POST http://localhost:3000/api/zonas
+Content-Type: application/json
+x-rol: DETECTIVE
+
+{
+  "nombre": "Puerto de Miami",
+  "descripcion": "Zona sur del puerto"
+}
+
+### Intento de crear zona (Acceso concedido)
+POST http://localhost:3000/api/zonas
+Content-Type: application/json
+x-rol: ADMIN
+
+{
+  "nombre": "Puerto de Miami",
+  "descripcion": "Zona sur del puerto"
