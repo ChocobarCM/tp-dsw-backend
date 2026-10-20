@@ -14,7 +14,7 @@ enrutador.get('/usuarios', async (req, res) => {
 
 enrutador.get('/usuarios/:id', async (req, res) => {
   try {
-    // findByPk busca por la Primary Key (tu codZona)
+    
     const usuariosEncontrado = await usuarios.findByPk(req.params.id);
     if (!usuariosEncontrado) {
       return res.status(404).json({ mensaje: 'Usuario no encontrada' });

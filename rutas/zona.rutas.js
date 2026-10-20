@@ -13,11 +13,10 @@ enrutador.get('/zonas', async (req, res) => {
   }
 });
 
-enrutador.get('/zonas/:id', soloAdmin,async (req, res) => {
+enrutador.get('/zonas/:id',async (req, res) => {
   try {
-    // findByPk busca por la Primary Key (tu codZona)
-    const zona = await zona.findByPk(req.params.id);
-    if (!zona) {
+    const unaZona = await zona.findByPk(req.params.id);
+    if (!unaZona) {
       return res.status(404).json({ mensaje: 'Zona no encontrada' });
     }
     res.json(zona);
