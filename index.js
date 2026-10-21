@@ -7,6 +7,8 @@ import rutasAuth from './rutas/auth.rutas.js';
 import zonarutas from './rutas/zona.rutas.js';
 import rutasTipoDelitos from './rutas/tipoDelitos.rutas.js';
 import rutasUsuarios from './rutas/usuarios.rutas.js';
+import rutaPruebas from './rutas/pruebas.rutas.js'; // Esto lo agregue yo
+import rutasCasos from './rutas/casos.rutas.js'; // Esto lo agregue yo
 
 const app = express();
 const port = 3000;
@@ -17,7 +19,8 @@ app.use('/api', zonarutas);
 app.use('/api', rutasTipoDelitos);
 app.use('/api', rutasUsuarios);
 app.use('/api', rutasAuth);
-
+app.use('/api', rutaPruebas); // Esto lo agregue yo
+app.use('/api', rutasCasos); // Esto lo agregue yo
 
 
 configurarRelaciones();

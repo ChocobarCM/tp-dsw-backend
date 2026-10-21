@@ -16,3 +16,60 @@ x-rol: ADMIN
 {
   "nombre": "Puerto de Miami",
   "descripcion": "Zona sur del puerto"
+}
+
+
+### 1. Crear un Caso previo (necesario para la dependencia)
+POST http://localhost:3000/api/casos
+Content-Type: application/json
+x-rol: ADMIN
+
+{
+  "descripcion": "Robo a mano armada en comercio céntrico",
+  "estado": "Abierto",
+  "direccion": "Av. Pellegrini 1500",
+  "fechaInicio": "2026-10-21"
+}
+
+### 1. Crear un Caso previo pero con acceso denegado(necesario para la dependencia)
+POST http://localhost:3000/api/casos
+Content-Type: application/json
+x-rol: DETECTIVE
+
+{
+  "descripcion": "Robo a mano armada en comercio céntrico",
+  "estado": "Abierto",
+  "direccion": "Av. Pellegrini 1500",
+  "fechaInicio": "2026-10-21"
+}
+
+
+### 2. Crear una Prueba asociada al Caso (POST - CRUD Dependiente)
+POST http://localhost:3000/api/pruebas
+Content-Type: application/json
+x-rol: ADMIN
+
+{
+  "descripcion": "Casquillo de bala 9mm encontrado en la escena",
+  "resultado": "Pendiente de peritaje",
+  "casoIdCasos": 4
+}
+
+### 3. Obtener todas las Pruebas junto a su Caso asociado (GET)
+GET http://localhost:3000/api/pruebas
+
+### 4. Obtener una Prueba específica por ID (GET)
+GET http://localhost:3000/api/pruebas/4
+
+### 5. Actualizar la Prueba (PUT - Carga de Resultado)
+PUT http://localhost:3000/api/pruebas/4
+Content-Type: application/json
+x-rol: ADMIN
+
+{
+  "resultado": "Coincidencia balística positiva con calibre 9mm"
+}
+
+### 6. Eliminar la Prueba (DELETE)
+DELETE http://localhost:3000/api/pruebas/5
+x-rol: ADMIN
