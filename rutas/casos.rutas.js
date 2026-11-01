@@ -1,11 +1,39 @@
 import { Router } from 'express';
-import { casos } from '../clases/casos.js';
+import { casoss } from '../clases/casos.js';
 import { auditoria } from '../clases/auditoria.js';
 
 const enrutador = Router();
 
 enrutador.post('/confeccionar', async (req, res) => {
   try {
+    const listaCasos = await casos.findAll({
+      include: [
+        { model: zona },
+        { model: tipoDelito }
+      ]
+    });
+    res.json(listaCasos);
+  } catch (error) {
+    res.status(500).json({ mensaje: 'Error al obtener los casos', error });
+  }
+});
+
+enrutador.get('/casos/:id',async (req,res) => {
+    try {
+        const unCaso = await casos.findByPk(req.params.id, {include: zona});
+        if (!unCaso) {
+            return res.status(404).json({mensaje: 'Caso no encontrado'});
+        }
+        res.json(unCaso);
+    } catch (error) {
+        res.status(500).json({ mensaje: 'Error al buscar el Caso', error});
+    }
+});
+
+enrutador.post('/casos', soloAdmin, async (req, res) => {
+  try {
+    const nuevoCaso = await casos.create(req.body);
+    res.status(201).json(nuevoCaso);
     const preCaso = await casos.create({
       ...req.body,
       estado: 'EN_VALORACION'
@@ -27,6 +55,21 @@ enrutador.post('/confeccionar', async (req, res) => {
 
 enrutador.put('/:id/transicion', async (req, res) => {
   try {
+    const casoActualizado = await casos.update(req.body, {
+      where: { codCaso: req.params.id }
+    });
+    if (casoActualizado[0] === 0) return res.status(404).json({ mensaje: 'Caso no encontrado' });
+    res.json({ mensaje: 'Caso actualizado con éxito' });
+  } catch (error) {
+    res.status(400).json({ mensaje: 'Error al actualizar', error });
+  }
+});
+
+enrutador.delete('/casos/:id', soloAdmin, async (req, res) => {
+  try {
+    const borrados = await casos.destroy({ where: { codCaso: req.params.id } });
+    if (borrados === 0) return res.status(404).json({ mensaje: 'Caso no encontrado' });
+    res.json({ mensaje: 'Caso eliminado correctamente' });
     const { nuevoEstado, dniUsuario, motivo } = req.body;
     
     // 1. Buscamos el caso
