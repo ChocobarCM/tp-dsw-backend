@@ -1,65 +1,58 @@
 import { Router } from 'express';
-import { caso } from '../clases/casos.js';
-import { zona } from '../clases/zona.js';
-import { tipoDelito } from '../clases/tipoDelitos.js';
-import { soloAdmin } from '../middlewares/auth.middleware.js';
+import { casos } from '../clases/casos.js';
+import { auditoria } from '../clases/auditoria.js';
 
 const enrutador = Router();
 
-enrutador.get('/casos', async (req, res) => {
+enrutador.post('/confeccionar', async (req, res) => {
   try {
-    const listaCasos = await caso.findAll({
-      include: [
-        { model: zona },
-        { model: tipoDelito }
-      ]
+    const preCaso = await casos.create({
+      ...req.body,
+      estado: 'EN_VALORACION'
     });
-    res.json(listaCasos);
+
+    await auditoria.create({
+      codCaso: preCaso.codCaso,
+      accion: 'CONFECCIÓN INICIAL',
+      estadoAnterior: 'INEXISTENTE',
+      estadoNuevo: 'EN_VALORACION',
+      dniUsuario: req.body.dniUsuario
+    });
+
+    res.status(201).json({ mensaje: 'Pre-caso enviado a valoración', caso: preCaso });
   } catch (error) {
-    res.status(500).json({ mensaje: 'Error al obtener los casos', error });
+    res.status(400).json({ error: 'Error al confeccionar' });
   }
 });
 
-enrutador.get('/casos/:id',async (req,res) => {
-    try {
-        const unCaso = await caso.findByPk(req.params.id, {include: zona});
-        if (!unCaso) {
-            return res.status(404).json({mensaje: 'Caso no encontrado'});
-        }
-        res.json(unCaso);
-    } catch (error) {
-        res.status(500).json({ mensje: 'Error al buscar el Caso'});
+enrutador.put('/:id/transicion', async (req, res) => {
+  try {
+    const { nuevoEstado, dniUsuario, motivo } = req.body;
+    
+    // 1. Buscamos el caso
+    const casoActual = await casos.findByPk(req.params.id);
+    
+    if (!casoActual) {
+      return res.status(404).json({ error: 'Caso no encontrado en la base de datos' });
     }
-});
 
-enrutador.post('/casos', soloAdmin, async (req, res) => {
-  try {
-    const nuevoCaso = await caso.create(req.body);
-    res.status(201).json(nuevoCaso);
-  } catch (error) {
-    res.status(400).json({ mensaje: 'Error al crear el caso', error });
-  }
-});
+    const estadoViejo = casoActual.estado;
 
-enrutador.put('/casos/:id', soloAdmin, async (req, res) => {
-  try {
-    const casoActualizado = await caso.update(req.body, {
-      where: { codCaso: req.params.id }
+    casoActual.estado = nuevoEstado;
+    await casoActual.save();
+
+    await auditoria.create({
+      codCaso: req.params.id,
+      accion: motivo || 'Cambio de estado',
+      estadoAnterior: estadoViejo,
+      estadoNuevo: nuevoEstado,
+      dniUsuario: dniUsuario
     });
-    if (casoActualizado[0] === 0) return res.status(404).json({ mensaje: 'Caso no encontrado' });
-    res.json({ mensaje: 'Caso actualizado con éxito' });
-  } catch (error) {
-    res.status(400).json({ mensaje: 'Error al actualizar', error });
-  }
-});
 
-enrutador.delete('/casos/:id', soloAdmin, async (req, res) => {
-  try {
-    const borrados = await caso.destroy({ where: { codCaso: req.params.id } });
-    if (borrados === 0) return res.status(404).json({ mensaje: 'Caso no encontrado' });
-    res.json({ mensaje: 'Caso eliminado correctamente' });
+    res.json({ mensaje: `Expediente pasó de ${estadoViejo} a ${nuevoEstado}` });
   } catch (error) {
-    res.status(400).json({ mensaje: 'Error al eliminar', error });
+    console.error("🔥 Error real de Sequelize:", error); 
+    res.status(500).json({ error: 'Error en la transición', detalle: error.message });
   }
 });
 

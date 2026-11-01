@@ -7,6 +7,7 @@ import { fiscalia } from './fiscalia.js'
 import { casos } from './casos.js';
 import { criminales } from './criminales.js'; 
 import { antecedentes } from './antecedentes.js';
+import { auditoria } from './auditoria.js';
 
 
 export function configurarRelaciones() {
@@ -20,6 +21,9 @@ export function configurarRelaciones() {
 
   casos.hasMany(pruebas);
   pruebas.belongsTo(casos);
+
+  casos.hasMany(auditoria, { foreignKey: 'codCaso' });
+  auditoria.belongsTo(casos, { foreignKey: 'codCaso' });
   
   tipoDelito.hasMany(casos)
   casos.belongsTo(tipoDelito)

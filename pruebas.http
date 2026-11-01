@@ -1,18 +1,70 @@
-### Intento de crear zona (Acceso denegado)
-POST http://localhost:3000/api/zonas
+### 1. DETECTIVE: Confeccionar un nuevo caso (Nace en pre-cortina)
+POST http://localhost:3000/api/casos/confeccionar
 Content-Type: application/json
-x-rol: DETECTIVE
 
 {
-  "nombre": "Puerto de Miami",
-  "descripcion": "Zona sur del puerto"
+  "descripcion": "Robo de mercadería en depósito",
+  "direccionHecho": "Av. Pellegrini 1200",
+  "fechaInicio": "2026-10-27",
+  "codZona": 1, 
+  "codTipoDelito": 1, 
+  "dniUsuario": 111 
 }
 
-### Intento de crear zona (Acceso concedido)
+
+
+### --- SEMILLAS MAESTRAS ---
+
+### 1. Crear una Zona
 POST http://localhost:3000/api/zonas
 Content-Type: application/json
-x-rol: ADMIN
 
 {
-  "nombre": "Puerto de Miami",
-  "descripcion": "Zona sur del puerto"
+  "nombre": "Zona Sur",
+  "descripcion": "Comprende jurisdicción sur de Rosario"
+}
+
+### 2. Crear un Tipo de Delito
+POST http://localhost:3000/api/tipodelitos
+Content-Type: application/json
+
+{
+  "nombre": "Robo Calificado",
+  "descripcion": "Robo con uso de armas o en poblado"
+}
+
+### 3. Crear el Usuario (Detective)
+POST http://localhost:3000/api/usuarios
+Content-Type: application/json
+
+{
+  "dni": 111,
+  "nombre": "Maximo",
+  "apellido": "Chocobar",
+  "password": "123",
+  "rol": "DETECTIVE",
+  "activo": true
+}
+
+### 4. Crear el Usuario (Admin/Teniente para después)
+POST http://localhost:3000/api/usuarios
+Content-Type: application/json
+
+{
+  "dni": 999,
+  "nombre": "Comisario",
+  "apellido": "L",
+  "password": "123",
+  "rol": "ADMIN",
+  "activo": true
+}
+
+### 2. ADMIN/TENIENTE: Aprobar el pre-caso (Transición)
+PUT http://localhost:3000/api/casos/1/transicion
+Content-Type: application/json
+
+{
+  "nuevoEstado": "ABIERTO",
+  "motivo": "Denuncia justificada, se procede a investigar",
+  "dniUsuario": 999
+}

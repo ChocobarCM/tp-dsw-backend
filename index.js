@@ -7,6 +7,7 @@ import rutasAuth from './rutas/auth.rutas.js';
 import zonarutas from './rutas/zona.rutas.js';
 import rutasTipoDelitos from './rutas/tipoDelitos.rutas.js';
 import rutasUsuarios from './rutas/usuarios.rutas.js';
+import rutasCasos from './rutas/casos.rutas.js';
 
 const app = express();
 const port = 3000;
@@ -17,6 +18,7 @@ app.use('/api', zonarutas);
 app.use('/api', rutasTipoDelitos);
 app.use('/api', rutasUsuarios);
 app.use('/api', rutasAuth);
+app.use('/api/casos', rutasCasos);
 
 
 
