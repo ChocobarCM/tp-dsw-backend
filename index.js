@@ -18,6 +18,7 @@ app.use('/api', zonarutas);
 app.use('/api', rutasTipoDelitos);
 app.use('/api', rutasUsuarios);
 app.use('/api', rutasAuth);
+app.use(express.static('front'));
 app.use('/api/casos', rutasCasos);
 
 

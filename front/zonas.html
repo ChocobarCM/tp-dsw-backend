@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="container-up"></div>
+        <div class="container-mid">
+            <div class="container-mid-left">
+                <div class="menu">
+                    <a href="index.html" class="menu-item">Home</a>
+                    <a href="menu-item" class="menu-item">Casos</a>
+                    <a href="menu-item" class="menu-item">Detectives</a>
+                    <a href="zonas.html" class="menu-item-active">Zonas</a>
+                </div>
+            </div>
+            <div class="container-mid-right">
+                <h1 class="titulo">Crear Zona</h1>
+                <div class="container-center">
+                    <form class="form" id="formZona" action="">
+                        <label>Nombre</label>
+                        <input type="text" id="nombreZona" required>
+                        <button type="submit">Crear</button>
+                    </form>
+                </div>
+                <h1 class="titulo">Listado de Zonas</h1>
+                <section>
+                    <table class="listado">
+                        <thead>
+                            <tr>
+                                <th>Codigo</th>
+                                <th>Nombre</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaZonas">
+                        </tbody>
+                    </table>
+                </section>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", () =>{
+        async function mostrarZonas() {
+            try {
+                const respuesta = await fetch('/api/zonas');
+                const zonas = await respuesta.json();
+
+                const cuerpoTabla = document.querySelector('#tablaZonas');
+                
+                cuerpoTabla.innerHTML ='';
+
+                zonas.forEach(zona => {
+                    const fila = document.createElement('tr');
+                    fila.innerHTML =`<td>${zona.codZona}</td><td>${zona.nombre}</td>`;
+                    cuerpoTabla.appendChild(fila);
+                });
+            } catch (error){
+                
+            }
+        }
+        mostrarZonas();
+
+        const formZona = document.querySelector('#formZona');
+
+        formZona.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            console.log('Se hizo click');
+            const nombreInput = document.querySelector('#nombreZona');
+            const nombre = nombreInput.value;
+            
+
+            try {
+                const respuesta = await fetch('/api/zonas', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/jason',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ nombre })
+                }
+                );
+                if (respuesta.ok){
+                    nombreInput.value = '';
+                    mostrarZonas();
+                }
+            }catch(error){}
+        }
+        );
+    });
+    </script>
+</body>
+</html>
