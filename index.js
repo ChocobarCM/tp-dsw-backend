@@ -9,6 +9,8 @@ import rutasTipoDelitos from './rutas/tipoDelitos.rutas.js';
 import rutasUsuarios from './rutas/usuarios.rutas.js';
 import rutaPruebas from './rutas/pruebas.rutas.js'; // Esto lo agregue yo
 import rutasCasos from './rutas/casos.rutas.js'; // Esto lo agregue yo
+import rutasOrden from './rutas/orden.rutas.js';
+import rutasFiscalia from './rutas/fiscalia.rutas.js';
 
 const app = express();
 const port = 3000;
@@ -22,6 +24,8 @@ app.use('/api', rutasAuth);
 app.use('/api', rutaPruebas); // Esto lo agregue yo
 app.use('/api', rutasCasos); // Esto lo agregue yoapp.use(express.static('front'));
 app.use('/api/casos', rutasCasos);
+app.use('/api', rutasOrden);
+app.use('/api', rutasFiscalia);
 
 
 
