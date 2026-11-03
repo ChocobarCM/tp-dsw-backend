@@ -35,7 +35,7 @@ enrutador.post('/tipoDelitos', async(req,res) =>{
 
 enrutador.put('/tipoDelitos/:id', async (req, res) => {
     try {
-        const tipoDelitosActualizado = await tipoDelito.updates(req.body ,{
+        const tipoDelitosActualizado = await tipoDelito.update(req.body ,{
             where: {codigoTD: req.params.id }
         });
         if ( tipoDelitosActualizado [0] === 0) {
