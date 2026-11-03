@@ -79,7 +79,8 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/jason',
-                        'Authorization': `Bearer ${token}`
+                        //COMENTADO PARA NO GUARDAR EL TOKEN
+                        //'Authorization': `Bearer ${token}`
                     },
                     body: JSON.stringify({ nombre })
                 }
