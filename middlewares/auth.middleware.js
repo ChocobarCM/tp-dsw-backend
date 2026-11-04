@@ -29,3 +29,19 @@ export const soloDetective = (req, res, next) => {
   next();
 };
 
+
+
+//Este middleware es para que solo los fiscales puedan acceder a la pantalla de pruebas
+export const soloFiscal = (req, res, next) => {
+  const rolUsuario = req.headers['x-rol'];
+
+  if (!rolUsuario) {
+    return res.status(401).json({ mensaje: 'Acceso denegado: No se identificó tu rol' });
+  }
+
+  if (rolUsuario !== 'FISCAL') {
+    return res.status(403).json({ mensaje: 'Acceso denegado: Área exclusiva para Fiscales' });
+  }
+
+  next();
+};
