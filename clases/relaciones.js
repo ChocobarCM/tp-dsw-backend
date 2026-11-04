@@ -25,8 +25,8 @@ export function configurarRelaciones() {
   casos.hasMany(auditoria, { foreignKey: 'codCaso' });
   auditoria.belongsTo(casos, { foreignKey: 'codCaso' });
   
-  tipoDelito.hasMany(casos)
-  casos.belongsTo(tipoDelito)
+  tipoDelito.hasMany(casos, { foreignKey: 'tipoDelitoId' });
+  casos.belongsTo(tipoDelito, { foreignKey: 'tipoDelitoId' });
 
   // Relaciones de 1 a 1 Prioridades cheñor
   zona.hasOne(fiscalia);

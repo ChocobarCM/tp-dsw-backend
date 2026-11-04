@@ -3,7 +3,7 @@ import { casos } from '../clases/casos.js';
 import { auditoria } from '../clases/auditoria.js';
 import { zona } from '../clases/zona.js'; 
 import { tipoDelito } from '../clases/tipoDelitos.js'; 
-import { soloAdmin } from '../middlewares/auth.middleware.js'; 
+import { soloAdmin, soloDetective } from '../middlewares/auth.middleware.js';
 
 const enrutador = Router();
 
@@ -11,7 +11,7 @@ const enrutador = Router();
 // RUTAS ESTÁNDAR (SANTIAGO)
 // ==========================================
 
-enrutador.get('/casos', async (req, res) => {
+enrutador.get('/casos', soloDetective , async (req, res) => {
   try {
     const listaCasos = await casos.findAll({
       include: [
@@ -25,31 +25,92 @@ enrutador.get('/casos', async (req, res) => {
   }
 });
 
-enrutador.get('/casos/:id', async (req, res) => {
+enrutador.get('/casos/pendientes', soloAdmin, async (req, res) => {
   try {
-    const unCaso = await casos.findByPk(req.params.id, { include: zona });
-    if (!unCaso) {
-      return res.status(404).json({ mensaje: 'Caso no encontrado' });
-    }
-    res.json(unCaso);
+    const pendientes = await casos.findAll({
+      where: { estado: 'PENDIENTE' },
+      include: [{ model: tipoDelito }]
+    });
+
+    res.json(pendientes);
   } catch (error) {
-    res.status(500).json({ mensaje: 'Error al buscar el Caso', error });
+    res.status(500).json({
+      mensaje: 'Error al obtener los casos pendientes',
+      error
+    });
   }
 });
 
-enrutador.post('/casos', soloAdmin, async (req, res) => {
+enrutador.put('/casos/:id/resolucion', soloAdmin, async (req, res) => {
+  const { decision } = req.body;
+
+  if (!['ACEPTAR', 'RECHAZAR'].includes(decision)) {
+    return res.status(400).json({
+      mensaje: 'La decisión debe ser ACEPTAR o RECHAZAR'
+    });
+  }
+
   try {
-    const nuevoCaso = await casos.create(req.body);
+    const nuevoEstado = decision === 'ACEPTAR' ? 'ACTIVO' : 'RECHAZADO';
+
+    const [actualizados] = await casos.update(
+      { estado: nuevoEstado },
+      {
+        where: {
+          idCasos: req.params.id,
+          estado: 'PENDIENTE'
+        }
+      }
+    );
+
+    if (actualizados === 0) {
+      return res.status(409).json({
+        mensaje: 'El caso no existe o ya fue revisado'
+      });
+    }
+
+    res.json({ mensaje: `Caso ${nuevoEstado.toLowerCase()} correctamente` });
+  } catch (error) {
+    res.status(500).json({
+      mensaje: 'Error al resolver el caso',
+      error
+    });
+  }
+});
+
+enrutador.get('/casos/:id', soloDetective, async (req, res) => {
+  try {
+    const unCaso = await casos.findByPk(req.params.id, {
+      include: [
+        { model: zona },
+        { model: tipoDelito }
+      ]
+    });
+
+    if (!unCaso) {
+      return res.status(404).json({ mensaje: 'Caso no encontrado' });
+    }
+
+    res.json(unCaso);
+  } catch (error) {
+    res.status(500).json({ mensaje: 'Error al buscar el caso', error });
+  }
+});
+
+enrutador.post('/casos', soloDetective , async (req, res) => {
+  try {
+    const nuevoCaso = await casos.create({ ...req.body, estado: 'PENDIENTE' });
     res.status(201).json(nuevoCaso);
   } catch (error) {
     res.status(400).json({ error: 'Error al crear' });
   }
 });
 
-enrutador.put('/casos/:id', soloAdmin, async (req, res) => {
+enrutador.put('/casos/:id', soloDetective , async (req, res) => {
   try {
-    const casoActualizado = await casos.update(req.body, {
-      where: { codCaso: req.params.id }
+    const { descripcion, direccion, fechaInicio, tipoDelitoId } = req.body;
+    const casoActualizado = await casos.update( { descripcion, direccion, fechaInicio, tipoDelitoId }, {
+      where: { idCasos: req.params.id }
     });
     if (casoActualizado[0] === 0) return res.status(404).json({ mensaje: 'Caso no encontrado' });
     res.json({ mensaje: 'Caso actualizado con éxito' });
@@ -58,9 +119,9 @@ enrutador.put('/casos/:id', soloAdmin, async (req, res) => {
   }
 });
 
-enrutador.delete('/casos/:id', soloAdmin, async (req, res) => {
+enrutador.delete('/casos/:id', soloDetective , async (req, res) => {
   try {
-    const borrados = await casos.destroy({ where: { codCaso: req.params.id } });
+    const borrados = await casos.destroy({ where: { idCasos: req.params.id } });
     if (borrados === 0) return res.status(404).json({ mensaje: 'Caso no encontrado' });
     res.json({ mensaje: 'Caso eliminado correctamente' });
   } catch (error) {
