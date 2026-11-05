@@ -78,6 +78,36 @@ enrutador.put('/casos/:id/resolucion', soloAdmin, async (req, res) => {
   }
 });
 
+enrutador.get('/casos/listado', soloAdmin, async (req, res) => {
+  try {
+    const { zonaId } = req.query;
+    const includeZona = { model: zona };
+
+    if (zonaId) {
+      const idNumerico = Number(zonaId);
+
+      if (!Number.isInteger(idNumerico) || idNumerico < 1) {
+        return res.status(400).json({ mensaje: 'La zona seleccionada no es válida' });
+      }
+
+      includeZona.where = { codZona: idNumerico };
+      includeZona.required = true;
+    }
+
+    const listaCasos = await casos.findAll({
+      include: [
+        includeZona,
+        { model: tipoDelito }
+      ],
+      order: [['idCasos', 'DESC']]
+    });
+
+    res.json(listaCasos);
+  } catch (error) {
+    res.status(500).json({ mensaje: 'Error al obtener el listado de casos', error });
+  }
+});
+
 enrutador.get('/casos/:id', soloDetective, async (req, res) => {
   try {
     const unCaso = await casos.findByPk(req.params.id, {
@@ -108,8 +138,8 @@ enrutador.post('/casos', soloDetective , async (req, res) => {
 
 enrutador.put('/casos/:id', soloDetective , async (req, res) => {
   try {
-    const { descripcion, direccion, fechaInicio, tipoDelitoId } = req.body;
-    const casoActualizado = await casos.update( { descripcion, direccion, fechaInicio, tipoDelitoId }, {
+    const { descripcion, direccion, fechaInicio, tipoDelitoId, zonaCodZona } = req.body;
+    const casoActualizado = await casos.update( { descripcion, direccion, fechaInicio, tipoDelitoId, zonaCodZona }, {
       where: { idCasos: req.params.id }
     });
     if (casoActualizado[0] === 0) return res.status(404).json({ mensaje: 'Caso no encontrado' });

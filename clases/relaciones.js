@@ -13,14 +13,16 @@ import { auditoria } from './auditoria.js';
 export function configurarRelaciones() {
   // --- RELACIONES DE CASOS ---
   // Relaciones de 1 a N :V 
-  zona.hasMany(casos);
-  casos.belongsTo(zona);
+  zona.hasMany(casos, { foreignKey: 'zonaCodZona' });
+  casos.belongsTo(zona, { foreignKey: 'zonaCodZona' });
 
   fiscalia.hasMany(orden);
   orden.belongsTo(fiscalia);
 
   casos.hasMany(pruebas);
   pruebas.belongsTo(casos);
+
+
 
   casos.hasMany(auditoria, { foreignKey: 'codCaso' });
   auditoria.belongsTo(casos, { foreignKey: 'codCaso' });
