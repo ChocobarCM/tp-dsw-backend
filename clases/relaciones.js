@@ -30,14 +30,14 @@ export function configurarRelaciones() {
   tipoDelito.hasMany(casos, { foreignKey: 'tipoDelitoId' });
   casos.belongsTo(tipoDelito, { foreignKey: 'tipoDelitoId' });
 
+    usuarios.hasMany(casos, {foreignKey: 'codDetective', });
+    casos.belongsTo(usuarios, {foreignKey: 'codDetective',as: 'detective',allowNull: true });
+
   // Relaciones de 1 a 1 Prioridades cheñor
   zona.hasOne(fiscalia);
   fiscalia.belongsTo(zona);
 
-  // Relaciones de N a M 
-    usuarios.belongsToMany(casos, { through: 'Detectives_Casos' });
-    casos.belongsToMany(usuarios, { through: 'Detectives_Casos' });
-
+  // Relaciones de N a M
     usuarios.belongsToMany(pruebas, { through: 'Forenses_Pruebas' });
     pruebas.belongsToMany(usuarios, { through: 'Forenses_Pruebas' });
 

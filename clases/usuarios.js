@@ -11,6 +11,11 @@ export const usuarios = sequelize.define('usuarios', {
     type: DataTypes.STRING,
     allowNull: false
   },
+  estado: {
+    type: DataTypes.ENUM('disponible', 'ocupado'),
+    allowNull: false,
+    defaultValue: 'disponible'
+  },
   apellido: {
     type: DataTypes.STRING,
     allowNull: false
