@@ -18,6 +18,8 @@ export function configurarRelaciones() {
 
   fiscalia.hasMany(orden);
   orden.belongsTo(fiscalia);
+  casos.hasMany(orden, { foreignKey: 'casoIdCasos' });
+  orden.belongsTo(casos, { foreignKey: 'casoIdCasos' });
 
   casos.hasMany(pruebas);
   pruebas.belongsTo(casos);

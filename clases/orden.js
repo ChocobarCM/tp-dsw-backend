@@ -9,7 +9,7 @@ export const orden = sequelize.define('orden', {
   },
   nroRegistroLegal: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: true
   },
   tipoOrden: {
     type: DataTypes.STRING,
@@ -25,7 +25,7 @@ export const orden = sequelize.define('orden', {
   },
   fechaAdmision: {
     type: DataTypes.DATE,
-    allowNull: false
+    allowNull: true
   },
   
   estadoOrden: {

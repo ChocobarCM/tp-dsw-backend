@@ -2,12 +2,12 @@ import { Router } from 'express';
 import { pruebas } from '../clases/pruebas.js';
 import { casos } from '../clases/casos.js';
 //import { soloAdmin } from '../middlewares/auth.middleware.js';
-import { soloFiscal } from '../middlewares/auth.middleware.js';
+import { soloDetective } from '../middlewares/auth.middleware.js';
 
 const enrutador = Router();
 
 // 1. Obtener todas las pruebas (incluye el Caso asociado)
-enrutador.get('/pruebas', soloFiscal , async (req, res) => {
+enrutador.get('/pruebas', soloDetective , async (req, res) => {
   try {
     const listaPruebas = await pruebas.findAll({
       include: [{ model: casos }
@@ -21,7 +21,7 @@ enrutador.get('/pruebas', soloFiscal , async (req, res) => {
 });
 
 
-enrutador.get('/pruebas/casos-activos', soloFiscal, async (req, res) => {
+enrutador.get('/pruebas/casos-activos', soloDetective, async (req, res) => {
   try {
     const casosActivos = await casos.findAll({
       where: { estado: 'ACTIVO' }
@@ -34,7 +34,7 @@ enrutador.get('/pruebas/casos-activos', soloFiscal, async (req, res) => {
 });
 
 // 2. Obtener una prueba por ID
-enrutador.get('/pruebas/:id', soloFiscal, async (req, res) => {
+enrutador.get('/pruebas/:id', soloDetective, async (req, res) => {
   try {
     const unaPrueba = await pruebas.findByPk(req.params.id, {
       include: [{ model: casos }]
@@ -49,7 +49,7 @@ enrutador.get('/pruebas/:id', soloFiscal, async (req, res) => {
 });
 
 // 3. Crear una nueva prueba vinculada a un caso ACTIVO
-enrutador.post('/pruebas', soloFiscal, async (req, res) => {
+enrutador.post('/pruebas', soloDetective, async (req, res) => {
   try {
     const caso = await casos.findByPk(req.body.casoIdCasos);
 
@@ -67,7 +67,7 @@ enrutador.post('/pruebas', soloFiscal, async (req, res) => {
 });
 
 // 4. Actualizar una prueba por ID (e.j. agregar resultado)
-enrutador.put('/pruebas/:id', soloFiscal, async (req, res) => {
+enrutador.put('/pruebas/:id', soloDetective, async (req, res) => {
   try {
     const pruebaActualizada = await pruebas.update(req.body, {
       where: { idpruebas: req.params.id }
@@ -82,7 +82,7 @@ enrutador.put('/pruebas/:id', soloFiscal, async (req, res) => {
 });
 
 // 5. Eliminar una prueba por ID
-enrutador.delete('/pruebas/:id', soloFiscal, async (req, res) => {
+enrutador.delete('/pruebas/:id', soloDetective, async (req, res) => {
   try {
     const borradas = await pruebas.destroy({
       where: { idpruebas: req.params.id }

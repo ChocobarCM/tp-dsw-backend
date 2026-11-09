@@ -6,6 +6,7 @@ import { tipoDelito } from '../clases/tipoDelitos.js';
 import { soloAdmin, soloDetective } from '../middlewares/auth.middleware.js';
 import { usuarios } from '../clases/usuarios.js';
 import { sequelize } from '../basedatos.js';
+import { Op } from 'sequelize';
 
 const enrutador = Router();
 
@@ -30,12 +31,51 @@ enrutador.get('/casos', soloDetective, async (req, res) => {
 enrutador.get('/casos/pendientes', soloAdmin, async (req, res) => {
   try {
     const pendientes = await casos.findAll({
-      where: { estado: 'PENDIENTE' },
+      where: {
+        estado: {
+          [Op.in]: ['PENDIENTE', 'CIERRE_PENDIENTE']
+        }
+      },
       include: [{ model: tipoDelito }]
     });
+
     res.json(pendientes);
   } catch (error) {
     res.status(500).json({ mensaje: 'Error al obtener pendientes', error });
+  }
+});
+
+enrutador.post('/casos/:id/solicitar-cierre', soloDetective, async (req, res) => {
+  try {
+    const dniDetective = Number(req.headers['x-dni']);
+
+    if (!Number.isInteger(dniDetective) || dniDetective < 1) {
+      return res.status(400).json({ mensaje: 'No se identificó un DNI de detective válido.' });
+    }
+
+    const casoActual = await casos.findOne({
+      where: {
+        idCasos: req.params.id,
+        codDetective: dniDetective,
+        estado: 'ACTIVO'
+      }
+    });
+
+    if (!casoActual) {
+      return res.status(409).json({
+        mensaje: 'El caso no existe, no te pertenece o no está activo.'
+      });
+    }
+
+    casoActual.estado = 'CIERRE_PENDIENTE';
+    await casoActual.save();
+
+    res.json({ mensaje: 'Solicitud de cierre enviada a Administración.' });
+  } catch (error) {
+    res.status(500).json({
+      mensaje: 'Error al solicitar el cierre del caso.',
+      error: error.message
+    });
   }
 });
 
@@ -47,39 +87,52 @@ enrutador.put('/casos/:id/resolucion', soloAdmin, async (req, res) => {
   }
 
   try {
-    const nuevoEstado = decision === 'ACEPTAR' ? 'ACTIVO' : 'RECHAZADO';
-    
     const casoActual = await casos.findOne({
-      where: { idCasos: req.params.id, estado: 'PENDIENTE' }
+      where: {
+        idCasos: req.params.id,
+        estado: {
+          [Op.in]: ['PENDIENTE', 'CIERRE_PENDIENTE']
+        }
+      }
     });
 
     if (!casoActual) {
-      return res.status(409).json({ mensaje: 'El caso no existe o ya fue revisado' });
+      return res.status(409).json({
+        mensaje: 'El caso no existe o ya fue revisado.'
+      });
+    }
+
+    const esSolicitudCierre = casoActual.estado === 'CIERRE_PENDIENTE';
+
+    let nuevoEstado;
+    if (esSolicitudCierre) {
+      nuevoEstado = decision === 'ACEPTAR' ? 'CERRADO' : 'ACTIVO';
+    } else {
+      nuevoEstado = decision === 'ACEPTAR' ? 'ACTIVO' : 'RECHAZADO';
     }
 
     casoActual.estado = nuevoEstado;
     await casoActual.save();
 
-    // Soporta cualquier nombre de FK que haya creado Sequelize
-    const fkDetective = casoActual.dniDetective || casoActual.codDetective || casoActual.usuarioDni; 
-    
-    if (fkDetective) {
-      if (nuevoEstado === 'ACTIVO') {
-        await usuarios.update(
-          { estado: 'ocupado' },
-          { where: { dni: fkDetective } }
-        );
-      } else if (nuevoEstado === 'RECHAZADO') {
-        await usuarios.update(
-          { estado: 'disponible' },
-          { where: { dni: fkDetective } }
-        );
-      }
+    const dniDetective =
+      casoActual.codDetective ||
+      casoActual.dniDetective ||
+      casoActual.usuarioDni;
+
+    if (dniDetective) {
+      await usuarios.update(
+        { estado: nuevoEstado === 'ACTIVO' ? 'ocupado' : 'disponible' },
+        { where: { dni: dniDetective } }
+      );
     }
 
-    res.json({ mensaje: `Caso ${nuevoEstado.toLowerCase()} correctamente.` });
+    res.json({
+      mensaje: esSolicitudCierre
+        ? `Solicitud de cierre ${decision === 'ACEPTAR' ? 'aceptada' : 'rechazada'}. El caso quedó ${nuevoEstado}.`
+        : `Caso ${nuevoEstado.toLowerCase()} correctamente.`
+    });
   } catch (error) {
-    res.status(500).json({ mensaje: 'Error al resolver el caso', error });
+    res.status(500).json({ mensaje: 'Error al resolver la solicitud del caso.', error });
   }
 });
 
@@ -122,42 +175,48 @@ enrutador.get('/casos/:id', soloDetective, async (req, res) => {
 // NUEVO POST CON CAPTURA DEL DNI DEL DETECTIVE
 enrutador.post('/casos', soloDetective, async (req, res) => {
   try {
-    const dni = req.body.dniDetective || req.body.codDetective || req.body.dniUsuario || req.headers['x-dni'];
-    const nuevoCaso = await casos.create({
-      ...req.body,
-      estado: 'PENDIENTE',
-      // Mandamos todas las opciones para no errarle a la columna de la DB
-      dniDetective: dni,
-      codDetective: dni,
-      usuarioDni: dni
+    const dniDetective = Number(req.headers['x-dni']);
+
+    if (!Number.isInteger(dniDetective) || dniDetective < 1) {
+      return res.status(400).json({
+        mensaje: 'No se recibió un DNI de detective válido.'
+      });
+    }
+
+    const detective = await usuarios.findOne({
+      where: { dni: dniDetective, rol: 'DETECTIVE' }
     });
+
+    if (!detective) {
+      return res.status(400).json({
+        mensaje: 'El DNI recibido no corresponde a un detective.'
+      });
+    }
+
+    const {
+      descripcion,
+      direccion,
+      fechaInicio,
+      tipoDelitoId,
+      zonaCodZona
+    } = req.body;
+
+    const nuevoCaso = await casos.create({
+      descripcion,
+      direccion,
+      fechaInicio,
+      tipoDelitoId,
+      zonaCodZona,
+      estado: 'PENDIENTE',
+      codDetective: detective.dni
+    });
+
     res.status(201).json(nuevoCaso);
   } catch (error) {
-    res.status(400).json({ error: 'Error al crear' });
-  }
-});
-
-enrutador.put('/casos/:id', soloDetective, async (req, res) => {
-  try {
-    const { descripcion, direccion, fechaInicio, tipoDelitoId, zonaCodZona } = req.body;
-    const casoActualizado = await casos.update(
-      { descripcion, direccion, fechaInicio, tipoDelitoId, zonaCodZona },
-      { where: { idCasos: req.params.id } }
-    );
-    if (casoActualizado[0] === 0) return res.status(404).json({ mensaje: 'No encontrado' });
-    res.json({ mensaje: 'Caso actualizado con éxito' });
-  } catch (error) {
-    res.status(400).json({ mensaje: 'Error al actualizar', error });
-  }
-});
-
-enrutador.delete('/casos/:id', soloDetective, async (req, res) => {
-  try {
-    const borrados = await casos.destroy({ where: { idCasos: req.params.id } });
-    if (borrados === 0) return res.status(404).json({ mensaje: 'No encontrado' });
-    res.json({ mensaje: 'Caso eliminado correctamente' });
-  } catch (error) {
-    res.status(500).json({ mensaje: 'Error al eliminar', error });
+    res.status(400).json({
+      mensaje: 'Error al crear el caso.',
+      error: error.message
+    });
   }
 });
 
