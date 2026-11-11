@@ -23,7 +23,11 @@ export const usuarios = sequelize.define('usuarios', {
     // ENUM significa que solo puede aceptar uno de estos valores exactos
     type: DataTypes.ENUM('ADMIN', 'DETECTIVE', 'FORENSE', 'JUEZ_FISCAL'),
     allowNull: false
-  }
+  },
+  estado: {
+  type: DataTypes.ENUM('disponible', 'ocupado'),
+  defaultValue: 'disponible' 
+}
 }, {
   timestamps: true
 });
