@@ -15,20 +15,19 @@ const enrutador = Router();
 // ==========================================
 
 enrutador.get('/casos', soloDetective, async (req, res) => {
-  const dniUsuario = Number(req.headers['x-dni']);
   try {
     const listaCasos = await casos.findAll({
-      where: {
-        codDetective: dniUsuario
-      },
-      include: [
-        { model: zona },
-        { model: tipoDelito }
-      ]
+      include: [{ model: zona }, { model: tipoDelito }]
     });
     res.json(listaCasos);
   } catch (error) {
-    res.status(500).json({ mensaje: 'Error al obtener los casos', error });
+    console.error("Error en GET /casos con include:", error.message);
+    try {
+      const listaSimple = await casos.findAll();
+      res.json(listaSimple);
+    } catch (err2) {
+      res.status(500).json({ mensaje: 'Error al obtener los casos', error: err2.message });
+    }
   }
 });
 

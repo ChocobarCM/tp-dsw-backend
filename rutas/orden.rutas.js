@@ -23,7 +23,7 @@ enrutador.get('/ordenes/allanamientos', async (req, res) => {
   try {
     const allanamientos = await orden.findAll({
       where: { tipoOrden: 'ALLANAMIENTO' },
-      include: [{ model: casos, include: [{ model: usuarios, as: 'detective', attributes: ['dni', 'nombre', 'apellido']  }] }],
+      include: [{ model: casos }], 
       order: [['fechaSolicitud', 'DESC']]
     });
 
@@ -72,6 +72,13 @@ enrutador.post('/ordenes/solicitar-allanamiento', soloDetective, async (req, res
     if (!casoActual || !['ACTIVO', 'ABIERTO'].includes(casoActual.estado)) {
       return res.status(400).json({
         mensaje: 'El caso debe existir y estar ACTIVO o ABIERTO.'
+      });
+    }
+
+    const cantPruebas = await pruebas.count({ where: { casoIdCasos: casoId } });
+    if (cantPruebas === 0) {
+      return res.status(400).json({
+        mensaje: 'No podés solicitar un allanamiento sin haber cargado al menos 1 evidencia en el caso.'
       });
     }
 
@@ -186,7 +193,7 @@ enrutador.get('/ordenes/:id', async (req, res) => {
 });
 
 
-enrutador.post('/ordenes', soloAdmin,async (req, res) => {
+enrutador.post('/ordenes', soloAdmin, async (req, res) => {
   try {
     const nuevaOrden = await orden.create(req.body);
     res.status(201).json(nuevaOrden);
@@ -196,7 +203,7 @@ enrutador.post('/ordenes', soloAdmin,async (req, res) => {
 });
 
 
-enrutador.put('/ordenes/:id', soloAdmin,async (req, res) => {
+enrutador.put('/ordenes/:id', soloAdmin, async (req, res) => {
   try {
     const ordenActualizada = await orden.update(req.body, {
       where: { idOrden: req.params.id } 
@@ -212,7 +219,7 @@ enrutador.put('/ordenes/:id', soloAdmin,async (req, res) => {
 });
 
 
-enrutador.delete('/ordenes/:id', soloAdmin,async (req, res) => {
+enrutador.delete('/ordenes/:id', soloAdmin, async (req, res) => {
   try {
     const borrados = await orden.destroy({
       where: { idOrden: req.params.id }
